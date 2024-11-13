@@ -1,26 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+
+  constructor(private readonly prisma: PrismaService) { }
+  async create(createUserDto: CreateUserDto) {
+    const { email, name, password } = createUserDto
+
+    const createdUser = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        password: await bcrypt.hash(password, 10),
+      }
+    });
+
+    return {
+      ...createdUser,
+      password: undefined
+    };
   }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  findByEmail(email: string) {
+    const foundByEmail = this.prisma.user.findUnique({
+      where: { email },
+    })
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    if (!foundByEmail) throw new NotFoundException("Email não encontrado.")
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    return foundByEmail;
   }
 }
