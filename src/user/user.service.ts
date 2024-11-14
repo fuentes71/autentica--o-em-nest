@@ -9,11 +9,11 @@ export class UserService {
   async create(createUserDto: CreateUserDto) {
     const { email, name, password } = createUserDto
 
-    const foundByEmail = this.prisma.user.findUnique({
+    const foundByEmail = await this.prisma.user.findUnique({
       where: { email },
-    })
+    });
 
-    if (foundByEmail) throw new ConflictException("Email já cadastrado.")
+    if (foundByEmail) { throw new ConflictException("Este email já está cadastrado.") }
 
 
     const createdUser = await this.prisma.user.create({
